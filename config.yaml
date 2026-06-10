@@ -1,0 +1,7 @@
+feed:
+    name: Nyaa
+    baseURL: https://nyaa.si/?page=rss
+qbittorrent:
+    username: lulan
+    password: "123456"
+    port: "8081"
