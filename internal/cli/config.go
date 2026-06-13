@@ -19,9 +19,8 @@ var (
 	configSubtitleStyle = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("245"))
 
-	focusedStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
-	blurredStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
-	configHelpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
+	focusedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+	blurredStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
 
 	focusedButton = focusedStyle.Render("[ Submit ]")
 	blurredButton = fmt.Sprintf("[ %s ]", blurredStyle.Render("Submit"))
@@ -215,7 +214,6 @@ func (m configModel) View() tea.View {
 		header,
 		status,
 		b.String(),
-		configHelpStyle.Render("Up/Down: navigate | Esc: exit"),
 	)
 
 	v := tea.NewView(content)

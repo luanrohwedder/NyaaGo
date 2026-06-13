@@ -41,16 +41,13 @@ type (
 		qbClient  *torrent.QbittorrentClient
 		loading   bool
 		status    string
+		width     int
+		height    int
 	}
 )
 
 var (
-	docStyle   = lipgloss.NewStyle().Margin(1, 2)
-	titleStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("212")).
-			Bold(true)
-	subtitleStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("245"))
+	docStyle       = lipgloss.NewStyle().Margin(1, 2)
 	searchBoxStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(lipgloss.Color("63")).
@@ -70,8 +67,6 @@ var (
 			Foreground(lipgloss.Color("203"))
 	statusStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("220"))
-	helpStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("241"))
 )
 
 func (i item) Title() string       { return i.title }
@@ -172,16 +167,10 @@ func (m listModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, cmd
 		}
 
-	case tea.WindowSizeMsg:
-		h, v := docStyle.GetFrameSize()
-		width := max(20, msg.Width-h)
-		m.textInput.SetWidth(max(10, width-searchBoxStyle.GetHorizontalFrameSize()))
-		m.list.SetSize(width, max(8, msg.Height-v-10))
-
 	case searchResultMsg:
 		m.loading = false
 		if msg.err != nil {
-			m.status = fmt.Sprintf("Falha ao buscar: %v", msg.err)
+			m.status = fmt.Sprintf("Failed to seach: %v", msg.err)
 			return m, nil
 		}
 
@@ -189,9 +178,9 @@ func (m listModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmd := m.list.SetItems(items)
 		m.list.ResetSelected()
 		if msg.query == "" {
-			m.status = fmt.Sprintf("%d resultados recentes", len(items))
+			m.status = fmt.Sprintf("%d recents results", len(items))
 		} else {
-			m.status = fmt.Sprintf("%d resultados para %q", len(items), msg.query)
+			m.status = fmt.Sprintf("%d results for %q", len(items), msg.query)
 		}
 		return m, cmd
 
@@ -210,11 +199,6 @@ func (m listModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m listModel) View() tea.View {
-	header := lipgloss.JoinVertical(
-		lipgloss.Left,
-		titleStyle.Render("NyaaGO"),
-		subtitleStyle.Render("Search for animes in Nyaa"),
-	)
 	searchBox := searchBoxStyle.Render(m.textInput.View())
 
 	status := m.status
@@ -227,13 +211,13 @@ func (m listModel) View() tea.View {
 		status = statusStyle.Render(status)
 	}
 
+	m.list.SetShowStatusBar(false)
+
 	content := lipgloss.JoinVertical(
 		lipgloss.Left,
-		header,
 		searchBox,
 		status,
 		m.list.View(),
-		helpStyle.Render("Enter: search  |  Up/Down: navigate  |  Esc: exit"),
 	)
 	v := tea.NewView(docStyle.Render(content))
 	v.AltScreen = true
@@ -291,9 +275,17 @@ func newModel(cfg *config.Config, feeds []feed.FeedResults, qbClient *torrent.Qb
 		spinner:   sp,
 		cfg:       cfg,
 		qbClient:  qbClient,
-		status:    fmt.Sprintf("%d", len(feeds)),
+		status:    "",
 	}
 	return m
+}
+
+func (m *listModel) SetSize(width, height int) {
+	m.width = width
+	m.height = height
+
+	m.textInput.SetWidth(max(10, width-20))
+	m.list.SetSize(max(10, width-20), max(10, height-12))
 }
 
 func NewProgram(cfg *config.Config, feeds []feed.FeedResults, qbClient *torrent.QbittorrentClient) *tea.Program {

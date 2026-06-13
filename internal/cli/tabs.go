@@ -43,6 +43,10 @@ var (
 		BorderTop(false).
 		BorderLeft(false).
 		BorderRight(false)
+
+	helpStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("241")).
+			Align(lipgloss.Center)
 )
 
 type tabModel struct {
@@ -62,7 +66,7 @@ func (m tabModel) Init() tea.Cmd {
 func (m tabModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.width = msg.Width
+		m.SetSize(msg.Width, msg.Height)
 	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "esc":
@@ -71,7 +75,7 @@ func (m tabModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.activeTab = (m.activeTab + 1) % 3
 			return m, nil
 		case "shift+tab":
-			m.activeTab = min(0, m.activeTab-1)
+			m.activeTab = max(0, m.activeTab-1)
 			return m, nil
 		}
 	}
@@ -92,6 +96,12 @@ func (m tabModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
+func (m *tabModel) SetSize(width, height int) {
+	m.width = width
+	m.height = height
+	m.listModel.SetSize(width, height)
+}
+
 func (m tabModel) View() tea.View {
 	highlight := lipgloss.Color("#7D56F4")
 	out := []string{}
@@ -105,20 +115,26 @@ func (m tabModel) View() tea.View {
 	}
 	row := lipgloss.JoinHorizontal(lipgloss.Top, out...)
 	gap := tabGap.BorderForeground(highlight).Render(strings.Repeat(" ", max(0, m.width-lipgloss.Width(row)-2)))
-	row = lipgloss.JoinHorizontal(lipgloss.Bottom, row, gap)
+	header := lipgloss.JoinHorizontal(lipgloss.Bottom, row, gap)
 
-	var content string
+	var content, footer string
 
 	switch m.activeTab {
 	case 0:
 		content = m.listModel.View().Content
+		footer = helpStyle.Width(m.width).Render("enter: search | 🢁🡻: navigate | ➜: download | esc: exit")
 	case 1:
 		content = "Downloads"
 	case 2:
 		content = m.configModel.View().Content
+		footer = helpStyle.Width(m.width).Render("enter: confirm | 🢁🡻: navigate | esc: exit")
 	}
 
-	content = lipgloss.JoinVertical(lipgloss.Left, row, content)
+	content = lipgloss.NewStyle().
+		Width(m.width).
+		Height(m.height - lipgloss.Height(header) - lipgloss.Height(footer)).
+		Render(content)
+	content = lipgloss.JoinVertical(lipgloss.Top, header, content, footer)
 
 	v := tea.NewView(content)
 	v.AltScreen = true
