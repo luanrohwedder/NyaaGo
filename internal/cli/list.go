@@ -33,7 +33,7 @@ type (
 		err   error
 	}
 
-	model struct {
+	listModel struct {
 		textInput textinput.Model
 		list      list.Model
 		spinner   spinner.Model
@@ -45,8 +45,7 @@ type (
 )
 
 var (
-	docStyle = lipgloss.NewStyle().
-			Margin(1, 2)
+	docStyle   = lipgloss.NewStyle().Margin(1, 2)
 	titleStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("212")).
 			Bold(true)
@@ -114,7 +113,7 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 	)
 }
 
-func (m model) Init() tea.Cmd {
+func (m listModel) Init() tea.Cmd {
 	return textinput.Blink
 }
 
@@ -129,7 +128,7 @@ func searchCmd(cfg *config.Config, query string) tea.Cmd {
 	}
 }
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m listModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
 		switch msg.String() {
@@ -177,7 +176,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		h, v := docStyle.GetFrameSize()
 		width := max(20, msg.Width-h)
 		m.textInput.SetWidth(max(10, width-searchBoxStyle.GetHorizontalFrameSize()))
-		m.list.SetSize(width, max(8, msg.Height-v-7))
+		m.list.SetSize(width, max(8, msg.Height-v-10))
 
 	case searchResultMsg:
 		m.loading = false
@@ -210,10 +209,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(listCmd, inputCmd)
 }
 
-func (m model) View() tea.View {
+func (m listModel) View() tea.View {
 	header := lipgloss.JoinVertical(
 		lipgloss.Left,
-		titleStyle.Render("nyaaGO"),
+		titleStyle.Render("NyaaGO"),
 		subtitleStyle.Render("Search for animes in Nyaa"),
 	)
 	searchBox := searchBoxStyle.Render(m.textInput.View())
@@ -236,8 +235,7 @@ func (m model) View() tea.View {
 		m.list.View(),
 		helpStyle.Render("Enter: search  |  Up/Down: navigate  |  Esc: exit"),
 	)
-	str := docStyle.Render(content)
-	v := tea.NewView(str)
+	v := tea.NewView(docStyle.Render(content))
 	v.AltScreen = true
 	return v
 }
@@ -258,7 +256,7 @@ func feedItems(feeds []feed.FeedResults) []list.Item {
 	return items
 }
 
-func newModel(cfg *config.Config, feeds []feed.FeedResults, qbClient *torrent.QbittorrentClient) model {
+func newModel(cfg *config.Config, feeds []feed.FeedResults, qbClient *torrent.QbittorrentClient) listModel {
 	ti := textinput.New()
 	ti.Prompt = "Search > "
 	ti.Placeholder = "Ex.: Hikaru no Go"
@@ -287,7 +285,7 @@ func newModel(cfg *config.Config, feeds []feed.FeedResults, qbClient *torrent.Qb
 	sp := spinner.New(spinner.WithSpinner(spinner.Dot))
 	sp.Style = statusStyle
 
-	m := model{
+	m := listModel{
 		textInput: ti,
 		list:      results,
 		spinner:   sp,

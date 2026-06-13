@@ -15,25 +15,15 @@ func Run() {
 		log.Fatal(err)
 	}
 
-	var qbClient *torrent.QbittorrentClient
-
-	p := cli.NewConfigProgram(cfg, &qbClient)
-	if _, err := p.Run(); err != nil {
-		log.Fatal(err)
-	}
-
-	if qbClient == nil || !qbClient.Logged {
-		return
-	}
-
 	feeds, err := feed.Feed(cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	p = cli.NewProgram(cfg, feeds, qbClient)
+	var qbClient *torrent.QbittorrentClient
+
+	p := cli.NewTabProgram(cfg, feeds, &qbClient)
 	if _, err := p.Run(); err != nil {
 		log.Fatal(err)
 	}
-
 }
