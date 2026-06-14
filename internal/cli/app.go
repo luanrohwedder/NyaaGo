@@ -9,7 +9,7 @@ import (
 
 type View interface {
 	tea.Model
-	getFooter() string
+	getHelper() string
 	setSize(int, int)
 }
 
