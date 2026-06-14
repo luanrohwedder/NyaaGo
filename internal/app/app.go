@@ -22,8 +22,8 @@ func Run() {
 
 	var qbClient *torrent.QbittorrentClient
 
-	p := cli.NewTabProgram(cfg, feeds, &qbClient)
-	if _, err := p.Run(); err != nil {
+	p := cli.New(cfg, feeds, &qbClient)
+	if err := cli.Run(p); err != nil {
 		log.Fatal(err)
 	}
 }
