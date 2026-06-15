@@ -59,7 +59,8 @@ func newLayout(cfg *config.Config, feeds []feed.FeedResults, qb **torrent.Qbitto
 		views: make([]View, 0),
 	}
 
-	layout.views = append(layout.views, newSearchView(cfg, feeds, *qb))
+	layout.views = append(layout.views, newSearchView(cfg, feeds, qb))
+	layout.views = append(layout.views, newConfigView(cfg, qb))
 
 	return &layout
 }

@@ -92,14 +92,14 @@ type searchView struct {
 	textInput textinput.Model
 	list      list.Model
 	cfg       *config.Config
-	qbClient  *torrent.QbittorrentClient
+	qbClient  **torrent.QbittorrentClient
 	status    string
 	loading   bool
 	width     int
 	height    int
 }
 
-func newSearchView(cfg *config.Config, feeds []feed.FeedResults, qbClient *torrent.QbittorrentClient) *searchView {
+func newSearchView(cfg *config.Config, feeds []feed.FeedResults, qbClient **torrent.QbittorrentClient) *searchView {
 	ti := textinput.New()
 	ti.Prompt = "Search > "
 	ti.Placeholder = "Ex.: Hikaru no Go"
@@ -191,12 +191,12 @@ func (sv *searchView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				sv.status = "No item selected"
 				return sv, nil
 			}
-			if sv.qbClient == nil || !sv.qbClient.Logged {
+			if sv.qbClient == nil || *sv.qbClient == nil || !(*sv.qbClient).Logged {
 				sv.status = "qBittorrent is not connected"
 				return sv, nil
 			}
 
-			err := sv.qbClient.AddTorrent(selected.url)
+			err := (*sv.qbClient).AddTorrent(selected.url)
 			if err != nil {
 				sv.status = fmt.Sprintf("Failed to Add Torrent: %s", err.Error())
 				return sv, nil
@@ -225,7 +225,7 @@ func (sv *searchView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	var listCmd, inputCmd tea.Cmd
-	sv.list, inputCmd = sv.list.Update(msg)
+	sv.list, listCmd = sv.list.Update(msg)
 	sv.textInput, inputCmd = sv.textInput.Update(msg)
 	return sv, tea.Batch(listCmd, inputCmd)
 }
