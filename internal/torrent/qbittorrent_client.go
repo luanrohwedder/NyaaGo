@@ -2,6 +2,7 @@ package torrent
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -12,6 +13,7 @@ import (
 	"time"
 
 	"github.com/luanrohwedder/nyaa-GO/internal/config"
+	"github.com/luanrohwedder/nyaa-GO/internal/models"
 )
 
 type QbittorrentClient struct {
@@ -136,4 +138,43 @@ func (qb *QbittorrentClient) AddTorrent(torrentURL string) error {
 
 func (c QbittorrentClient) RemoveTorrent() {
 
+}
+
+func (qb *QbittorrentClient) GetTorrent(status string) ([]models.Torrent, error) {
+	if qb == nil || !qb.Logged || qb.client == nil {
+		return nil, fmt.Errorf("qbittorrent client is not connected")
+	}
+
+	if status == "" {
+		status = "all"
+	}
+
+	u := qb.baseURL + "/api/v2/torrents/info?filter=" + status
+
+	req, err := http.NewRequest(http.MethodGet, u, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := qb.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	data, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("Failed to fetch download list, status=%d body%s", res.StatusCode, string(data))
+	}
+
+	var torrents []models.Torrent
+	if err := json.Unmarshal(data, &torrents); err != nil {
+		return nil, err
+	}
+
+	return torrents, nil
 }

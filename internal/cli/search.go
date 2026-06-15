@@ -11,6 +11,7 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/luanrohwedder/nyaa-GO/internal/config"
 	"github.com/luanrohwedder/nyaa-GO/internal/feed"
+	"github.com/luanrohwedder/nyaa-GO/internal/models"
 	"github.com/luanrohwedder/nyaa-GO/internal/torrent"
 )
 
@@ -83,7 +84,7 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, item list.Ite
 }
 
 type searchMsg struct {
-	feeds []feed.FeedResults
+	feeds []models.Feed
 	query string
 	err   error
 }
@@ -99,7 +100,7 @@ type searchView struct {
 	height    int
 }
 
-func newSearchView(cfg *config.Config, feeds []feed.FeedResults, qbClient **torrent.QbittorrentClient) *searchView {
+func newSearchView(cfg *config.Config, feeds []models.Feed, qbClient **torrent.QbittorrentClient) *searchView {
 	ti := textinput.New()
 	ti.Prompt = "Search > "
 	ti.Placeholder = "Ex.: Hikaru no Go"
@@ -114,7 +115,6 @@ func newSearchView(cfg *config.Config, feeds []feed.FeedResults, qbClient **torr
 	ti.SetStyles(inputStyles)
 
 	results := list.New(convertFeedItems(feeds), itemDelegate{}, 0, 0)
-	results.Title = "Results"
 	results.SetShowTitle(false)
 	results.SetShowFilter(false)
 	results.SetFilteringEnabled(false)
@@ -137,7 +137,7 @@ func newSearchView(cfg *config.Config, feeds []feed.FeedResults, qbClient **torr
 	return &sv
 }
 
-func convertFeedItems(feeds []feed.FeedResults) []list.Item {
+func convertFeedItems(feeds []models.Feed) []list.Item {
 	items := make([]list.Item, 0, len(feeds))
 	for _, it := range feeds {
 		newItem := itemResult{

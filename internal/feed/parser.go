@@ -4,27 +4,13 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/luanrohwedder/nyaa-GO/internal/config"
+	"github.com/luanrohwedder/nyaa-GO/internal/models"
 	"github.com/mmcdole/gofeed"
 )
 
-type FeedResults struct {
-	Title      string
-	NyaaURL    string
-	TorrentURL string
-	Published  time.Time
-	Size       string
-	Seeders    uint16
-	Leechers   uint16
-}
-
-func Feed(cfg *config.Config) ([]FeedResults, error) {
-	return Search(cfg, "")
-}
-
-func Search(cfg *config.Config, query string) ([]FeedResults, error) {
+func Search(cfg *config.Config, query string) ([]models.Feed, error) {
 	feedURL, err := searchURL(cfg.Feeder.BaseURL, query)
 	if err != nil {
 		return nil, err
@@ -61,8 +47,8 @@ func searchURL(baseURL, query string) (string, error) {
 	return u.String(), nil
 }
 
-func parser(feed *gofeed.Feed) ([]FeedResults, error) {
-	res := make([]FeedResults, 0)
+func parser(feed *gofeed.Feed) ([]models.Feed, error) {
+	res := make([]models.Feed, 0)
 
 	for _, it := range feed.Items {
 		seeders, err := strconv.Atoi(it.Extensions["nyaa"]["seeders"][0].Value)
@@ -75,7 +61,7 @@ func parser(feed *gofeed.Feed) ([]FeedResults, error) {
 			return nil, err
 		}
 
-		newItem := FeedResults{
+		newItem := models.Feed{
 			Title:      it.Title,
 			NyaaURL:    it.GUID,
 			TorrentURL: it.Link,

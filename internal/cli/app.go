@@ -3,7 +3,7 @@ package cli
 import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/luanrohwedder/nyaa-GO/internal/config"
-	"github.com/luanrohwedder/nyaa-GO/internal/feed"
+	"github.com/luanrohwedder/nyaa-GO/internal/models"
 	"github.com/luanrohwedder/nyaa-GO/internal/torrent"
 )
 
@@ -13,7 +13,7 @@ type View interface {
 	setSize(int, int)
 }
 
-func New(cfg *config.Config, feeds []feed.FeedResults, qb **torrent.QbittorrentClient) tea.Model {
+func New(cfg *config.Config, feeds []models.Feed, qb **torrent.QbittorrentClient) tea.Model {
 	return newLayout(cfg, feeds, qb)
 }
 

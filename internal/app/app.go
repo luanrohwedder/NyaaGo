@@ -15,7 +15,7 @@ func Run() {
 		log.Fatal(err)
 	}
 
-	feeds, err := feed.Feed(cfg)
+	feeds, err := feed.Search(cfg, "")
 	if err != nil {
 		log.Fatal(err)
 	}

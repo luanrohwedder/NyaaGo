@@ -6,7 +6,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/luanrohwedder/nyaa-GO/internal/config"
-	"github.com/luanrohwedder/nyaa-GO/internal/feed"
+	"github.com/luanrohwedder/nyaa-GO/internal/models"
 	"github.com/luanrohwedder/nyaa-GO/internal/torrent"
 )
 
@@ -53,20 +53,24 @@ type Layout struct {
 	views      []View
 }
 
-func newLayout(cfg *config.Config, feeds []feed.FeedResults, qb **torrent.QbittorrentClient) *Layout {
+func newLayout(cfg *config.Config, feeds []models.Feed, qb **torrent.QbittorrentClient) *Layout {
 	layout := Layout{
-		tabs:  []string{"Search", "Settings"},
+		tabs:  []string{"Search", "Download", "Settings"},
 		views: make([]View, 0),
 	}
 
 	layout.views = append(layout.views, newSearchView(cfg, feeds, qb))
+	layout.views = append(layout.views, newDownloadView(qb))
 	layout.views = append(layout.views, newConfigView(cfg, qb))
 
 	return &layout
 }
 
 func (l Layout) Init() tea.Cmd {
-	return nil
+	if len(l.views) == 0 {
+		return nil
+	}
+	return l.views[l.activeView].Init()
 }
 
 func (l *Layout) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -80,10 +84,10 @@ func (l *Layout) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return l, tea.Quit
 		case "tab":
 			l.activeView = (l.activeView + 1) % len(l.views)
-			return l, nil
+			return l, l.views[l.activeView].Init()
 		case "shift+tab":
 			l.activeView = (l.activeView - 1 + len(l.views)) % len(l.views)
-			return l, nil
+			return l, l.views[l.activeView].Init()
 		}
 	}
 
