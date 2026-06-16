@@ -21,4 +21,5 @@ type Torrent struct {
 	Seeders    uint16  `json:"num_seeds"`
 	Leechers   uint16  `json:"num_leechs"`
 	State      string  `json:"state"`
+	Hash       string  `json:"hash"`
 }

@@ -23,6 +23,7 @@ type itemDownload struct {
 	speed      int64
 	progress   float64
 	state      string
+	hash       string
 }
 
 func (i itemDownload) FilterValue() string { return i.title }
@@ -122,6 +123,7 @@ func (dv *downloadView) setDownloads(torrents []models.Torrent) tea.Cmd {
 			speed:      t.Speed,
 			progress:   t.Progress,
 			state:      t.State,
+			hash:       t.Hash,
 		})
 	}
 
@@ -157,8 +159,19 @@ func (dv *downloadView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			var cmd tea.Cmd
 			dv.list, cmd = dv.list.Update(msg)
 			return dv, cmd
-		case "d":
+		case "d", "D":
+			selected, ok := dv.list.SelectedItem().(itemDownload)
+			if !ok {
+				return dv, nil
+			}
 
+			deleteFile := msg.String() == "D"
+
+			err := (*dv.qbClient).RemoveTorrent(selected.hash, deleteFile)
+			if err != nil {
+				dv.status = err.Error()
+			}
+			return dv, dv.fetchTorrentsCmd()
 		}
 
 	case tickMsg:
@@ -212,7 +225,7 @@ func (dv *downloadView) setSize(width, height int) {
 }
 
 func (dv downloadView) getHelper() string {
-	return "↑↓: navigate"
+	return "↑↓: navigate | d: delete | D: delete w/ file"
 }
 
 func formatBytes(value int64) string {

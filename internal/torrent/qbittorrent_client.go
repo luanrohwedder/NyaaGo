@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -136,8 +137,48 @@ func (qb *QbittorrentClient) AddTorrent(torrentURL string) error {
 	return nil
 }
 
-func (c QbittorrentClient) RemoveTorrent() {
+func (qb *QbittorrentClient) RemoveTorrent(hash string, deleteFile bool) error {
+	if qb == nil || !qb.Logged || qb.client == nil {
+		return fmt.Errorf("qBitTorrent client is not connected")
+	}
 
+	buf := &bytes.Buffer{}
+	w := multipart.NewWriter(buf)
+
+	if err := w.WriteField("hashes", hash); err != nil {
+		return err
+	}
+
+	if err := w.WriteField("deleteFiles", strconv.FormatBool(deleteFile)); err != nil {
+		return err
+	}
+
+	if err := w.Close(); err != nil {
+		return err
+	}
+
+	u := qb.baseURL + "/api/v2/torrents/delete"
+	req, err := http.NewRequest(http.MethodPost, u, buf)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", w.FormDataContentType())
+
+	res, err := qb.client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+
+	data, err := io.ReadAll(res.Body)
+	if err != nil {
+		return err
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("Failed to delete torrent, status=%d body%s", res.StatusCode, string(data))
+	}
+	return nil
 }
 
 func (qb *QbittorrentClient) GetTorrent(status string) ([]models.Torrent, error) {
