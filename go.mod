@@ -6,6 +6,7 @@ require (
 	charm.land/bubbles/v2 v2.1.0
 	charm.land/bubbletea/v2 v2.0.7
 	charm.land/lipgloss/v2 v2.0.3
+	github.com/charmbracelet/x/exp/charmtone v0.0.0-20260615092313-b57e5e6d29bb
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/mmcdole/gofeed v1.3.0
 	gopkg.in/yaml.v3 v3.0.1

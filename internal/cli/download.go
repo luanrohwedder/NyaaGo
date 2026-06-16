@@ -10,6 +10,7 @@ import (
 	"charm.land/bubbles/v2/progress"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/luanrohwedder/nyaa-GO/internal/cli/components"
 	"github.com/luanrohwedder/nyaa-GO/internal/models"
 	"github.com/luanrohwedder/nyaa-GO/internal/torrent"
 )
@@ -87,10 +88,15 @@ type torrentsLoadedMsg struct {
 }
 
 type downloadView struct {
-	list     list.Model
-	qbClient **torrent.QbittorrentClient
-	status   string
-	hasError bool
+	list       list.Model
+	qbClient   **torrent.QbittorrentClient
+	status     string
+	hasError   bool
+	showDialog bool
+
+	confirmDialog components.ConfirmDialog
+	selectedHash  string
+	deleteFile    bool
 }
 
 func newDownloadView(qb **torrent.QbittorrentClient) *downloadView {
@@ -105,8 +111,9 @@ func newDownloadView(qb **torrent.QbittorrentClient) *downloadView {
 	l.SetShowHelp(false)
 
 	return &downloadView{
-		list:     l,
-		qbClient: qb,
+		list:          l,
+		qbClient:      qb,
+		confirmDialog: components.NewConfirmDialog("Are you sure?", 25, 8, 1),
 	}
 }
 
@@ -152,6 +159,26 @@ func (dv downloadView) Init() tea.Cmd {
 }
 
 func (dv *downloadView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if dv.showDialog {
+		confirmMsg := dv.confirmDialog.Update(msg)
+
+		if confirmMsg != nil {
+			msg := confirmMsg.(components.ConfirmMsg)
+			dv.showDialog = false
+			if !msg.Accepted {
+				return dv, nil
+			}
+
+			err := (*dv.qbClient).RemoveTorrent(dv.selectedHash, dv.deleteFile)
+			if err != nil {
+				dv.status = err.Error()
+				return dv, nil
+			}
+			return dv, dv.fetchTorrentsCmd()
+		}
+		return dv, nil
+	}
+
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
 		switch msg.String() {
@@ -165,13 +192,11 @@ func (dv *downloadView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return dv, nil
 			}
 
-			deleteFile := msg.String() == "D"
+			dv.showDialog = true
+			dv.selectedHash = selected.hash
+			dv.deleteFile = msg.String() == "D"
 
-			err := (*dv.qbClient).RemoveTorrent(selected.hash, deleteFile)
-			if err != nil {
-				dv.status = err.Error()
-			}
-			return dv, dv.fetchTorrentsCmd()
+			return dv, nil
 		}
 
 	case tickMsg:
@@ -212,6 +237,10 @@ func (dv downloadView) View() tea.View {
 		dv.list.View(),
 	)
 
+	if dv.showDialog {
+		content = dv.confirmDialog.Render(content)
+	}
+
 	return tea.NewView(content)
 }
 
@@ -222,6 +251,10 @@ func (dv *downloadView) setSize(width, height int) {
 		width: max(10, width-20),
 	}
 	dv.list.SetDelegate(delegate)
+
+	dx := width/2 - dv.confirmDialog.Width/2
+	dy := height/2 - dv.confirmDialog.Height/2
+	dv.confirmDialog.SetPosition(dx, dy)
 }
 
 func (dv downloadView) getHelper() string {
