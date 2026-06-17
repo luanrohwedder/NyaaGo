@@ -60,7 +60,7 @@ func newLayout(cfg *config.Config, feeds []models.Feed, qb **torrent.Qbittorrent
 	}
 
 	layout.views = append(layout.views, newSearchView(cfg, feeds, qb))
-	layout.views = append(layout.views, newDownloadView(qb))
+	layout.views = append(layout.views, newTorrentView(qb))
 	layout.views = append(layout.views, newConfigView(cfg, qb))
 
 	return &layout

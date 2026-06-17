@@ -15,7 +15,7 @@ import (
 	"github.com/luanrohwedder/nyaa-GO/internal/torrent"
 )
 
-type itemDownload struct {
+type itemTorrent struct {
 	title      string
 	downloaded int64
 	seeders    uint16
@@ -27,17 +27,17 @@ type itemDownload struct {
 	hash       string
 }
 
-func (i itemDownload) FilterValue() string { return i.title }
+func (i itemTorrent) FilterValue() string { return i.title }
 
-type itemDownloadDelegate struct {
+type itemTorrentDelegate struct {
 	width int
 }
 
-func (d itemDownloadDelegate) Height() int                               { return 3 }
-func (d itemDownloadDelegate) Spacing() int                              { return 1 }
-func (d itemDownloadDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd { return nil }
-func (d itemDownloadDelegate) Render(w io.Writer, m list.Model, index int, item list.Item) {
-	i, ok := item.(itemDownload)
+func (d itemTorrentDelegate) Height() int                               { return 3 }
+func (d itemTorrentDelegate) Spacing() int                              { return 1 }
+func (d itemTorrentDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd { return nil }
+func (d itemTorrentDelegate) Render(w io.Writer, m list.Model, index int, item list.Item) {
+	i, ok := item.(itemTorrent)
 	if !ok {
 		return
 	}
@@ -87,7 +87,7 @@ type torrentsLoadedMsg struct {
 	err      error
 }
 
-type downloadView struct {
+type torrentView struct {
 	list       list.Model
 	qbClient   **torrent.QbittorrentClient
 	status     string
@@ -99,8 +99,8 @@ type downloadView struct {
 	deleteFile    bool
 }
 
-func newDownloadView(qb **torrent.QbittorrentClient) *downloadView {
-	delegate := itemDownloadDelegate{
+func newTorrentView(qb **torrent.QbittorrentClient) *torrentView {
+	delegate := itemTorrentDelegate{
 		width: 80,
 	}
 
@@ -110,18 +110,18 @@ func newDownloadView(qb **torrent.QbittorrentClient) *downloadView {
 	l.SetFilteringEnabled(false)
 	l.SetShowHelp(false)
 
-	return &downloadView{
+	return &torrentView{
 		list:          l,
 		qbClient:      qb,
 		confirmDialog: components.NewConfirmDialog("Are you sure?", 25, 8, 1),
 	}
 }
 
-func (dv *downloadView) setDownloads(torrents []models.Torrent) tea.Cmd {
+func (dv *torrentView) setTorrents(torrents []models.Torrent) tea.Cmd {
 	items := make([]list.Item, 0, len(torrents))
 
 	for _, t := range torrents {
-		items = append(items, itemDownload{
+		items = append(items, itemTorrent{
 			title:      t.Title,
 			downloaded: t.Downloaded,
 			seeders:    t.Seeders,
@@ -138,7 +138,7 @@ func (dv *downloadView) setDownloads(torrents []models.Torrent) tea.Cmd {
 	return dv.list.SetItems(items)
 }
 
-func (dv downloadView) fetchTorrentsCmd() tea.Cmd {
+func (dv torrentView) fetchTorrentsCmd() tea.Cmd {
 	return func() tea.Msg {
 		if dv.qbClient == nil || *dv.qbClient == nil {
 			return torrentsLoadedMsg{
@@ -154,11 +154,11 @@ func (dv downloadView) fetchTorrentsCmd() tea.Cmd {
 	}
 }
 
-func (dv downloadView) Init() tea.Cmd {
+func (dv torrentView) Init() tea.Cmd {
 	return tea.Batch(dv.fetchTorrentsCmd(), tickCmd())
 }
 
-func (dv *downloadView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (dv *torrentView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if dv.showDialog {
 		confirmMsg := dv.confirmDialog.Update(msg)
 
@@ -187,7 +187,7 @@ func (dv *downloadView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			dv.list, cmd = dv.list.Update(msg)
 			return dv, cmd
 		case "d", "D":
-			selected, ok := dv.list.SelectedItem().(itemDownload)
+			selected, ok := dv.list.SelectedItem().(itemTorrent)
 			if !ok {
 				return dv, nil
 			}
@@ -208,7 +208,7 @@ func (dv *downloadView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			dv.hasError = true
 			return dv, nil
 		}
-		return dv, dv.setDownloads(msg.torrents)
+		return dv, dv.setTorrents(msg.torrents)
 	}
 
 	var cmd tea.Cmd
@@ -216,7 +216,7 @@ func (dv *downloadView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return dv, cmd
 }
 
-func (dv downloadView) View() tea.View {
+func (dv torrentView) View() tea.View {
 	if len(dv.list.Items()) == 0 {
 		status := dv.status
 		if dv.hasError {
@@ -244,10 +244,10 @@ func (dv downloadView) View() tea.View {
 	return tea.NewView(content)
 }
 
-func (dv *downloadView) setSize(width, height int) {
+func (dv *torrentView) setSize(width, height int) {
 	dv.list.SetSize(max(10, width-20), max(10, height-12))
 
-	delegate := itemDownloadDelegate{
+	delegate := itemTorrentDelegate{
 		width: max(10, width-20),
 	}
 	dv.list.SetDelegate(delegate)
@@ -257,7 +257,7 @@ func (dv *downloadView) setSize(width, height int) {
 	dv.confirmDialog.SetPosition(dx, dy)
 }
 
-func (dv downloadView) getHelper() string {
+func (dv torrentView) getHelper() string {
 	return "↑↓: navigate | d: delete | D: delete w/ file"
 }
 
