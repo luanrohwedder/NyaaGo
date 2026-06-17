@@ -21,6 +21,7 @@ func Run() {
 	}
 
 	var qbClient *torrent.QbittorrentClient
+	qbClient, _ = torrent.NewQbittorrentClient(cfg.Qbittorrent)
 
 	p := cli.New(cfg, feeds, &qbClient)
 	if err := cli.Run(p); err != nil {
